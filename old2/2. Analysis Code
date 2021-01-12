@@ -1,0 +1,69 @@
+#########################################
+####### Code in situ comparison #########
+#########################################
+####  Author: Cristina Deidda    ########
+#########################################
+rm(list = ls())
+
+
+library("readxl")
+library(tidyr)
+library(ggpubr)
+library(reshape)
+library("dplyr")
+library("gmt")
+
+####################### LOAD IN SITU PROCESSED DATA: SENT-HYDRO  ###########################
+
+Dir1<-c("C:/Users/39349/Documents/Remote Sensing/1. Dati/")
+
+load(paste0(Dir1,"In-situ data/Po/SENT_HYDRO_data_PO.RData"))
+load(paste0(Dir1,"In-situ data/Umbria/SENT_HYDRO_data_UMBRIA.RData"))
+load(paste0(Dir1,"In-situ data/Lazio/HYDRO_data_LAZIO.RData"))
+load(paste0(Dir1,"In-situ data/Veneto/SENT_HYDRO_data_VENETO.RData"))
+load(paste0(Dir1,"In-situ data/Toscana/SENT_HYDRO_data_TOSCANA.RData"))
+
+setwd("C:/Users/39349/Documents/Remote Sensing/1. Dati/Info data")
+load("Merged_STAZIONI_ALL_INFO.RData")
+
+
+############################## MERGE ALL LIST ###############################################
+
+SENT_HYDRO_data_ALL<-append( SENT_HYDRO_data_PO, SENT_HYDRO_data_LAZIO)
+
+SENT_HYDRO_data_ALL<-append(SENT_HYDRO_data_ALL , SENT_HYDRO_data_VENETO)
+
+SENT_HYDRO_data_ALL<-append(SENT_HYDRO_data_ALL , SENT_HYDRO_data_TOSCANA)
+
+SENT_HYDRO_data_ALL$Ponte_Nuovo<-SENT_HYDRO_data_UMBRIA
+
+
+# Save data
+setwd("C:/Users/39349/Documents/Remote Sensing/RESULTS")
+save(SENT_HYDRO_data_ALL, file="SENT_HYDRO_data_ALL.RData")
+
+
+######################################Summary ###############################################
+
+rsq2 <- function (x, y) cor(x, y, use="complete.obs") ^ 2
+
+
+Summary_results<-data.frame(matrix(,length(SENT_HYDRO_data_ALL),6))
+colnames(Summary_results)<-c("Station","Correlation","Rsquared","Section","Distance","Region")
+for ( jj in 1:length(SENT_HYDRO_data_ALL))
+{
+  Summary_results$Station[[jj]]<- names(SENT_HYDRO_data_ALL[jj])
+  Summary_results$Correlation[[jj]]<-cor(SENT_HYDRO_data_ALL[[jj]]$Hydro_diff, SENT_HYDRO_data_ALL[[jj]]$Sentinel_diff, use="complete.obs")
+  Summary_results$RSquared[[jj]]<-rsq2(SENT_HYDRO_data_ALL[[jj]]$Hydro_diff, SENT_HYDRO_data_ALL[[jj]]$Sentinel_diff)
+  gh_pos<-which(Merged_STAZIONI_ALL_INFO$NomeStazione==names(SENT_HYDRO_data_ALL[jj]))
+  Summary_results$Section[[jj]]<-  Merged_STAZIONI_ALL_INFO$`Larghezza.Alveo..m.`[gh_pos[1]]
+  Summary_results$Region[[jj]]<-  Merged_STAZIONI_ALL_INFO$Regione[gh_pos[1]]
+  Summary_results$Distance[[jj]]<-  Merged_STAZIONI_ALL_INFO$Distance[gh_pos[1]]
+}
+
+
+
+
+
+
+
